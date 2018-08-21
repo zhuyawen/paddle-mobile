@@ -34,7 +34,8 @@ class Loader {
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false,
                                           bool quantification = false,
-                                          bool can_add_split = false);
+                                          bool can_add_split = false,
+                                          const char *key = "");
 
   /*
    * @b load combine format fluid mode
@@ -43,13 +44,15 @@ class Loader {
   const framework::Program<Dtype, P> Load(const std::string &model_path,
                                           const std::string &para_path,
                                           bool optimize = false,
-                                          bool quantification = false);
+                                          bool quantification = false,
+                                          const char *key = "");
 
  private:
   const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
                                                  bool optimize = false,
                                                  bool quantification = false,
-                                                 bool can_add_split = false);
+                                                 bool can_add_split = false,
+                                                 const char *key = "");
 };
 
 }  // namespace paddle_mobile

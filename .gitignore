@@ -84,3 +84,4 @@ SwiftProtobuf.framework
 paddle-mobile.xcworkspace
 metal/models/
 metal/images/
+/src/model-decrypt/

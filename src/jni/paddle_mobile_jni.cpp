@@ -389,6 +389,112 @@ JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
 #endif
 }
 
+#ifdef ENABLE_CRYPT
+
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadEncrypt(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring encrypted_key) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+  ANDROIDLOGI("load invoked");
+  bool optimize = true;
+  bool isLoadOk = false;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+        jstring2cppstring(env, modelPath), optimize, false, 1,
+        env->GetStringUTFChars(encrypted_key, 0));
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+    isLoadOk = false;
+  }
+#else
+  isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+      jstring2cppstring(env, modelPath), optimize, false, 1,
+      env->GetStringUTFChars(encrypted_key, 0));
+#endif
+  return static_cast<jboolean>(isLoadOk);
+}
+
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualifiedEncrypt(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring encrypted_key) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+
+  ANDROIDLOGI("loadQualified invoked");
+  bool optimize = true;
+  bool qualified = true;
+  bool isLoadOk = false;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+        jstring2cppstring(env, modelPath), optimize, qualified, 1,
+        env->GetStringUTFChars(encrypted_key, 0));
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+    isLoadOk = false;
+  }
+#else
+  isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+      jstring2cppstring(env, modelPath), optimize, qualified, 1,
+      env->GetStringUTFChars(encrypted_key, 0));
+#endif
+
+  return static_cast<jboolean>(isLoadOk);
+}
+
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedEncrypt(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath,
+    jstring encrypted_key) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+  ANDROIDLOGI("loadCombined invoked");
+  bool optimize = true;
+  bool isLoadOk = false;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+        jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+        optimize, false, 1, env->GetStringUTFChars(encrypted_key, 0));
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+    isLoadOk = false;
+  }
+#else
+  isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+      jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+      optimize, false, 1, env->GetStringUTFChars(encrypted_key, 0));
+#endif
+  return static_cast<jboolean>(isLoadOk);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_baidu_paddle_PML_loadCombinedQualifiedEncrypt(JNIEnv *env, jclass thiz,
+                                                       jstring modelPath,
+                                                       jstring paramPath,
+                                                       jstring encrypted_key) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+  ANDROIDLOGI("loadCombinedQualified invoked");
+  bool optimize = true;
+  bool qualified = true;
+  bool isLoadOk = false;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+        jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+        optimize, qualified, 1, env->GetStringUTFChars(encrypted_key, 0));
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+    isLoadOk = false;
+  }
+#else
+  isLoadOk = getPaddleMobileInstance()->LoadEncrypt(
+      jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+      optimize, qualified, 1, env->GetStringUTFChars(encrypted_key, 0));
+#endif
+  return static_cast<jboolean>(isLoadOk);
+}
+#endif
 }  // namespace jni
 }  // namespace paddle_mobile
 

@@ -9,10 +9,27 @@ option(LOG_PROFILE "log profile" ON)
 option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
+option(USE_CRYPT "build crypt logics" ON)
+
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
-file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+if (USE_CRYPT)
+    file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h src/model-decrypt/include/model_decrypt.h)
+else()
+    file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+endif()
+
 include_directories(src/)
+
+
+if (USE_CRYPT)
+    add_definitions(-DENABLE_CRYPT)
+    include_directories(src/model-decrypt/include/)
+    link_directories(src/model-decrypt/armeabi-v7a/)
+    #link_libraries(src/model-decrypt/armeabi-v7a/libmodelcrypt.a)
+    find_library(modelcrypt src/model-decrypt/armeabi-v7a/)
+else ()
+endif ()
 
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
@@ -152,6 +169,11 @@ elseif(IS_IOS)
     add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 else ()
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+endif ()
+
+if (USE_CRYPT)
+    target_link_libraries(paddle-mobile modelcrypt z)
+else ()
 endif ()
 
 # unit test

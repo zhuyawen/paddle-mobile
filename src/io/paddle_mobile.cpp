@@ -25,6 +25,49 @@ void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 };
 
 template <typename Dtype, Precision P>
+bool PaddleMobile<Dtype, P>::LoadEncrypt(const std::string &dirname,
+                                         bool optimize, bool quantification,
+                                         int batch_size, const char *key) {
+  if (loader_.get() == nullptr) {
+    loader_ = std::make_shared<Loader<Dtype, P>>();
+  } else {
+    LOG(kLOG_INFO) << "loader inited";
+  }
+
+  if (executor_.get() == nullptr) {
+    executor_ = std::make_shared<Executor<Dtype, P>>(
+        loader_->Load(dirname, optimize, quantification, false, key),
+        batch_size, optimize);
+  } else {
+    LOG(kLOG_INFO) << "executor inited";
+  }
+
+  return true;
+}
+
+template <typename Dtype, Precision P>
+bool PaddleMobile<Dtype, P>::LoadEncrypt(const std::string &model_path,
+                                         const std::string &para_path,
+                                         bool optimize, bool quantification,
+                                         int batch_size, const char *key) {
+  if (loader_.get() == nullptr) {
+    loader_ = std::make_shared<Loader<Dtype, P>>();
+  } else {
+    LOG(kLOG_INFO) << "loader inited";
+  }
+
+  if (executor_.get() == nullptr) {
+    executor_ = std::make_shared<Executor<Dtype, P>>(
+        loader_->Load(model_path, para_path, optimize, quantification, key),
+        batch_size, optimize);
+  } else {
+    LOG(kLOG_INFO) << "executor inited";
+  }
+
+  return true;
+}
+
+template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
                                   bool quantification, int batch_size) {
   if (loader_.get() == nullptr) {

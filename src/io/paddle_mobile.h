@@ -48,6 +48,23 @@ class PaddleMobile {
   bool Load(const std::string &model_path, const std::string &para_path,
             bool optimize = false, bool quantification = false,
             int batch_size = 1);
+
+  /*
+   * @b load separate format fluid model
+   * @b 加载分开形式的 fluid 模型
+   * */
+  bool LoadEncrypt(const std::string &dirname, bool optimize = false,
+                   bool quantification = false, int batch_size = 1,
+                   const char *key = "");
+
+  /*
+   * @b load combine format fluid mode
+   * @b 加载结合在一起格式的模型
+   * */
+  bool LoadEncrypt(const std::string &model_path, const std::string &para_path,
+                   bool optimize = false, bool quantification = false,
+                   int batch_size = 1, const char *key = "");
+
   /*
    * @b 设置线程数, 当 cmake 中开启 openmp 时生效
    * */
