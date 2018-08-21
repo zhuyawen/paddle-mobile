@@ -37,11 +37,11 @@ int main() {
               << std::distance(std::begin(vec_result), biggest) << std::endl;
 
     auto time3 = time();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 1; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
+    std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
               << std::endl;
   }
   std::cout
