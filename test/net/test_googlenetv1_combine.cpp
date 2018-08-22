@@ -32,7 +32,7 @@ int main() {
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
-    GetInput<float>("/Users/xiebaiyuan/PaddleProject/paddle-mobile/test/images/img.bin", &input, dims);
+    GetInput<float>(g_test_image_1x3x224x224_imagebin, &input, dims);
 
     // 预热一次
     auto vec_result = paddle_mobile.Predict(input, dims);

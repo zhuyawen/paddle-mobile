@@ -18,6 +18,7 @@ limitations under the License. */
 #include <random>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 #include "common/common.h"
 #include "common/log.h"
@@ -42,6 +43,9 @@ static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 static const char *g_test_image_1x3x224x224_banana =
     "../images/input_3x224x224_banana";
+
+static const char *g_test_image_1x3x224x224_imagebin =
+        "../images/img.bin";
 static const char *g_hand = "../images/hand_image";
 
 using paddle_mobile::framework::DDim;
