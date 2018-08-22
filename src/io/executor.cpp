@@ -15,6 +15,7 @@ limitations under the License. */
 #include "io/executor.h"
 #include <operators/math/gemm.h>
 #include <algorithm>
+#include <string>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
@@ -26,6 +27,7 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "io/decrypter.h"
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>
@@ -34,8 +36,41 @@ limitations under the License. */
 
 namespace paddle_mobile {
 using framework::Variable;
-
+char *key = 0;
 char *Get_binary_data(std::string filename) {
+#ifdef ENABLE_CRYPT
+
+  paddle_mobile::decrypter *decrypter;
+  if (paddle_mobile::key && strlen(paddle_mobile::key) > 1) {
+    LOG(kLOG_INFO) << " paddle_mobile::key = " << paddle_mobile::key;
+
+    uint8_t *buf = nullptr;
+    DLOG << "ininininin: encrypt_key:" << strlen(paddle_mobile::key);
+
+    size_t read_size =
+        decrypter->ReadBufferCrypt(filename.c_str(), &buf, paddle_mobile::key);
+    DLOG << "read_size: " << read_size;
+    char *data = new char[read_size];
+
+    memcpy(data, buf, read_size);
+    return data;
+  } else {
+    FILE *file = fopen(filename.c_str(), "rb");
+    PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
+                          filename.c_str());
+    fseek(file, 0, SEEK_END);
+    int64_t size = ftell(file);
+    PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
+    rewind(file);
+    auto *data = new char[size];
+    size_t bytes_read = fread(data, 1, size, file);
+    PADDLE_MOBILE_ENFORCE(bytes_read == size,
+                          "read binary file bytes do not match with fseek");
+    fclose(file);
+    return data;
+  }
+
+#else
   FILE *file = fopen(filename.c_str(), "rb");
   PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
                         filename.c_str());
@@ -43,12 +78,13 @@ char *Get_binary_data(std::string filename) {
   int64_t size = ftell(file);
   PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
   rewind(file);
-  char *data = new char[size];
+  auto *data = new char[size];
   size_t bytes_read = fread(data, 1, size, file);
   PADDLE_MOBILE_ENFORCE(bytes_read == size,
                         "read binary file bytes do not match with fseek");
   fclose(file);
   return data;
+#endif
 }
 
 #pragma mark - executor
@@ -235,6 +271,7 @@ void Executor<Dtype, P>::InitMemory() {
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
   LOG(kLOG_INFO) << " begin init combine memory";
+
   char *origin_data = Get_binary_data(program_.para_path);
   char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {

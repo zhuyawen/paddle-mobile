@@ -32,6 +32,8 @@ limitations under the License. */
 #endif
 
 namespace paddle_mobile {
+// 秘钥
+extern char *key;
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {

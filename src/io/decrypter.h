@@ -16,7 +16,6 @@
 // Created by 谢柏渊 on 2018/8/21.
 //
 #pragma once
-#ifdef ENABLE_CRYPT
 
 #include <cstddef>
 #include <cstdint>
@@ -38,6 +37,4 @@ class decrypter {
  protected:
  private:
 };
-
 }  // namespace paddle_mobile
-#endif

@@ -23,31 +23,35 @@ int main() {
   //  if (paddle_mobile.Load(std::string(g_genet_combine) + "/model",
   //                         std::string(g_genet_combine) + "/params", true)) {
   bool optimize = true;
-  const char* encrypted_key =
-      "#w$`-3>Yyzue5f%3a3zY@_)wYZ1&c5Nlh#lUmy+K+;O7uqMRra";
 
-  if (paddle_mobile.LoadEncrypt(
-          std::string(g_genet_combine) + "/genetmodel.mlm",
-          std::string(g_genet_combine) + "/genetparams.mlm", optimize, false, 1,
-          encrypted_key)) {
+  if (paddle_mobile.Load(std::string(g_googlenet_combinev1) + "/model",
+                         std::string(g_googlenet_combinev1) + "/params",
+                         optimize, false, 1)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 
     std::vector<float> input;
-    std::vector<int64_t> dims{1, 3, 128, 128};
-    GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
+    std::vector<int64_t> dims{1, 3, 224, 224};
+    GetInput<float>("/Users/xiebaiyuan/PaddleProject/paddle-mobile/test/images/img.bin", &input, dims);
 
     // 预热一次
     auto vec_result = paddle_mobile.Predict(input, dims);
+
     std::vector<float>::iterator biggest =
         std::max_element(std::begin(vec_result), std::end(vec_result));
+
     std::cout << " Max element is " << *biggest << " at position "
               << std::distance(std::begin(vec_result), biggest) << std::endl;
 
     auto time3 = time();
     for (int i = 0; i < 1; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
+      std::cout << "结果:" << std::endl;
+      for (int j = 0; j < vec_result.size(); ++j) {
+        std::cout << j << " : " << vec_result.at(j) << std::endl;
+      }
     }
+
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
               << std::endl;

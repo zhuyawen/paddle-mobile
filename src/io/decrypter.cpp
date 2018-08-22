@@ -14,8 +14,6 @@
 //
 // Created by 谢柏渊 on 2018/8/21.
 //
-
-#ifdef ENABLE_CRYPT
 #include "io/decrypter.h"
 #include <common/log.h>
 #include <model-decrypt/include/model_crypt.h>
@@ -28,6 +26,8 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
                                   uint8_t **decrypt_output, const char *key) {
   std::string str = file_path;
   DLOG << "ReadBufferCrypt..." << str;
+  DLOG << "ReadBufferCrypt...key" << std::string(key);
+  DLOG << "ReadBufferCrypt...keylen" << strlen(key);
   int ret = 0;
   void *context = nullptr;
   unsigned int sign = 0;
@@ -41,7 +41,7 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
                            &sign);
   if (0 != ret) {
     DLOG << "failed to init_crypt_context.";
-    return static_cast<size_t>(-1);
+    return static_cast<size_t>(0);
   }
   DLOG << "init_crypt_context succeed.";
 
@@ -52,7 +52,7 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
     snprintf(buf, sizeof(buf), "failed to open_file_map for file %s",
              file_path);
     DLOG << "failed to open_file_map.\n";
-    return static_cast<size_t>(-1);
+    return static_cast<size_t>(0);
   }
   DLOG << "open_file_map succeed.  file_size: " << file_size;
 
@@ -62,7 +62,7 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
   if (0 != ret) {
     printf("failed to model_decrypt.\n");
     DLOG << "failed to model_decrypt.  ret:" << ret;
-    return static_cast<size_t>(-1);
+    return static_cast<size_t>(0);
   }
   DLOG << "decrypt_output_size: " << decrypt_output_size;
 
@@ -79,6 +79,5 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
   context = nullptr;
 
   return decrypt_output_size;
+}
 }  // namespace paddle_mobile
-}  // namespace paddle_mobile
-#endif

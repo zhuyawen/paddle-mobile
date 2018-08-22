@@ -36,6 +36,7 @@ static const char *g_mobilenet = "../models/mobilenet";
 static const char *g_resnet_50 = "../models/resnet_50";
 static const char *g_resnet = "../models/resnet";
 static const char *g_googlenet_combine = "../models/googlenet_combine";
+static const char *g_googlenet_combinev1 = "../models/googlenetv1_combine";
 static const char *g_yolo = "../models/yolo";
 static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";

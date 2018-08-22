@@ -109,9 +109,9 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
 
   PADDLE_MOBILE_ENFORCE(buf != nullptr, "read from __model__ is null");
 
-  for (int i = 0; i < read_size; ++i) {
-    DLOG << "buf -" << i << *(buf + i);
-  }
+  //  for (int i = 0; i < read_size; ++i) {
+  //    DLOG << "buf -" << i << *(buf + i);
+  //  }
 
   c_program = paddle_mobile__framework__proto__program_desc__unpack(
       nullptr, read_size, buf);

@@ -5,6 +5,10 @@ if ("googlenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-googlenetv1 net/test_googlenetv1_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-googlenetv1 paddle-mobile)
 elseif ("mobilenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
@@ -56,6 +60,9 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
+    # gen test
+    ADD_EXECUTABLE(test-googlenetv1 net/test_googlenetv1_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-googlenetv1 paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h executor_for_test.h)

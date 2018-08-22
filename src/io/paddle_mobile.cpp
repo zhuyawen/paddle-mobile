@@ -28,6 +28,9 @@ template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::LoadEncrypt(const std::string &dirname,
                                          bool optimize, bool quantification,
                                          int batch_size, const char *key) {
+  DLOG << "LoadEncrypt  key len" << strlen(key);
+  paddle_mobile::key = new char[strlen(key)];
+  memcpy(paddle_mobile::key, key, strlen(key));
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -50,6 +53,9 @@ bool PaddleMobile<Dtype, P>::LoadEncrypt(const std::string &model_path,
                                          const std::string &para_path,
                                          bool optimize, bool quantification,
                                          int batch_size, const char *key) {
+  DLOG << "LoadEncrypt  key len" << strlen(key);
+  paddle_mobile::key = new char[strlen(key)];
+  memcpy(paddle_mobile::key, key, strlen(key));
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -70,6 +76,7 @@ bool PaddleMobile<Dtype, P>::LoadEncrypt(const std::string &model_path,
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
                                   bool quantification, int batch_size) {
+  paddle_mobile::key = 0;
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -90,6 +97,7 @@ template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
                                   const std::string &para_path, bool optimize,
                                   bool quantification, int batch_size) {
+  paddle_mobile::key = 0;
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -124,6 +132,8 @@ template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::Clear() {
   executor_ = nullptr;
   loader_ = nullptr;
+  delete (paddle_mobile::key);
+  paddle_mobile::key = nullptr;
 }
 
 template <typename Dtype, Precision P>
