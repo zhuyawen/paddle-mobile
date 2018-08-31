@@ -43,7 +43,7 @@ void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
 
   std::vector<int64_t> output_dims;
   output_dims.reserve(
-          static_cast<size_t>(x_num_col_dims + y_dims.size() - y_num_col_dims));
+      static_cast<size_t>(x_num_col_dims + y_dims.size() - y_num_col_dims));
 
   for (int i = 0; i < x_num_col_dims; ++i) {
     output_dims.push_back(x_dims[i]);

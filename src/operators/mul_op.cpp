@@ -20,9 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void MulOp<Dtype, T>::InferShape() const {
-
-}
+void MulOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile

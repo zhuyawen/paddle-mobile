@@ -56,7 +56,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jstring modelPath) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("load invoked");
-  bool optimize = true;
+  bool optimize = false;
   bool isLoadOk = false;
 
 #ifdef ENABLE_EXCEPTION
@@ -79,7 +79,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
   std::lock_guard<std::mutex> lock(shared_mutex);
 
   ANDROIDLOGI("loadQualified invoked");
-  bool optimize = true;
+  bool optimize = false;
   bool qualified = true;
   bool isLoadOk = false;
 
@@ -103,7 +103,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
     JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("loadCombined invoked");
-  bool optimize = true;
+  bool optimize = false;
   bool isLoadOk = false;
 
 #ifdef ENABLE_EXCEPTION
@@ -127,7 +127,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
     JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("loadCombinedQualified invoked");
-  bool optimize = true;
+  bool optimize = false;
   bool qualified = true;
   bool isLoadOk = false;
 
@@ -350,6 +350,46 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
   env->ReleaseFloatArrayElements(meanValues, meansPointer, 0);
   ANDROIDLOGI("predictYuv finished");
 #endif
+
+  return result;
+}
+JNIEXPORT jlongArray JNICALL
+Java_com_baidu_paddle_PML_predictNlp(JNIEnv *env, jclass thiz, jlongArray buf) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+
+  jlong *ddim_ptr = env->GetLongArrayElements(buf, NULL);
+  jsize ddim_size = env->GetArrayLength(buf);
+  std::vector<int64_t> ids;
+
+  for (int i = 0; i < ddim_size; ++i) {
+    jlong x = ddim_ptr[i];
+    ids.push_back((int64_t)x);
+  }
+
+  paddle_mobile::framework::LoDTensor words;
+
+  auto size = static_cast<int>(ids.size());
+
+  paddle_mobile::framework::LoD lod{{0, ids.size()}};
+  DDim dims{size, 1};
+  words.Resize(dims);
+  words.set_lod(lod);
+  DLOG << "words lod : " << words.lod();
+  auto *pdata = words.mutable_data<int64_t>();
+  size_t n = words.numel() * sizeof(int64_t);
+  DLOG << "n :" << n;
+  memcpy(pdata, ids.data(), n);
+  DLOG << "words lod 22: " << words.lod();
+  auto vec_result = paddle_mobile.PredictLod(words);
+  DLOG << *vec_result;
+
+  int count = vec_result->numel();
+  jlongArray result = NULL;
+  ANDROIDLOGE("predict nlp size %d", count);
+
+  result = env->NewLongArray(count);
+
+  env->SetLongArrayRegion(result, 0, count, vec_result->data<int64_t>());
 
   return result;
 }
