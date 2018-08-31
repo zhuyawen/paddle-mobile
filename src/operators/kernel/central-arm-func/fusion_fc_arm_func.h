@@ -30,7 +30,9 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   int axis = param.Axis();
   Tensor *out = param.Out();
   auto *out_data = out->mutable_data<float>();
-  float *bias_data = out->mutable_data<float>();
+  int m = out->dims()[0];
+  int n = out->dims()[1];
+
   const Tensor x_matrix =
       input_x->dims().size() > 2
           ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
@@ -58,8 +60,9 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   //  for (int i = 0; i < out->numel(); i++) {
   //    DLOG << out_data[i];
   //  }
+  // bias_data的维度和out的维度一致
   math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(1), false, bias_data);
+                      out, static_cast<float>(1), false);
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
   //            if (out_dim.size() != 2) {
   //                out->Resize(out_dim);

@@ -23,7 +23,7 @@ int main() {
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
 
-  auto isok = paddle_mobile.Load(g_nlp, false);
+  auto isok = paddle_mobile.Load(g_nlp, true);
 
   //  auto isok = paddle_mobile.Load(std::string(g_nlp) + "/model",
   //                                 std::string(g_nlp) + "/params", false);
@@ -48,12 +48,12 @@ int main() {
     memcpy(pdata, ids.data(), n);
     DLOG << "words lod 22: " << words.lod();
     auto time3 = time();
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.PredictLod(words);
       DLOG << *vec_result;
     }
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) /*/ 10*/ << "ms"
+    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
               << std::endl;
   }
   return 0;
