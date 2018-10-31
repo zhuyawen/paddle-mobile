@@ -1,33 +1,99 @@
-cmake_minimum_required(VERSION 3.0)
-project(paddle-mobile)
+cmake_minimum_required(VERSION 3.0.0)
 
-option(DEBUGING "enable debug mode" ON)
-option(USE_OPENMP "openmp support" OFF)
+option(USE_OPENMP "openmp support" ON)
+option(DEBUGING "enable debug mode" OFF)
 option(USE_EXCEPTION "use std exception" ON)
-option(LOG_PROFILE "log profile" ON)
+option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
+option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
 option(CPU "armv7 with neon" ON)
-option(MALI_GPU "mali gpu" OFF)
+option(GPU_MALI "mali gpu" OFF)
+option(GPU_CL "opencl gpu" ON)
 option(FPGA "fpga" OFF)
-set(DEBUGING ON)
 
-if (ARM_LINUX)
-include("${CMAKE_CURRENT_LIST_DIR}/tools/arm-platform.cmake")
-endif ()
+
+project(paddle-mobile)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+include_directories(src/)
 
-if (CPU)
-  add_definitions(-DPADDLE_MOBILE_CPU)
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS}")
+if(IS_IOS)
+    set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc \
+        -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
+    add_compile_options(-fembed-bitcode)
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.cc)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.cpp)
-
+    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
 
-if (MALI_GPU)
+if(DEBUGING)
+    message(STATUS "debugging mode")
+    add_definitions(-DPADDLE_MOBILE_DEBUG)
+else()
+endif()
+
+if(SYMBOL_HIDDEN)
+    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+endif()
+
+if(USE_EXCEPTION)
+    message(STATUS "use exception")
+    add_definitions(-DENABLE_EXCEPTION -fexceptions)
+else()
+    add_definitions(-fno-exceptions)
+endif()
+
+if(LOG_PROFILE)
+    add_definitions(-DPADDLE_MOBILE_PROFILE)
+endif()
+
+if(USE_OPENMP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
+endif()
+
+# platform control
+if(ARM_LINUX)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/arm-platform.cmake")
+endif()
+
+if(CPU)
+    add_definitions(-DPADDLE_MOBILE_CPU)
+else()
+    file(GLOB_RECURSE _tmp_list src/operators/kernel/arm/*.cpp src/operators/kernel/arm/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/operators/kernel/arm/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
+
+if (GPU_CL)
+    add_definitions(-DPADDLE_MOBILE_CL)
+
+    # opencl version
+    add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
+
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL.so)
+    include_directories(third_party/opencl/OpenCL-Headers)
+else()
+    file(GLOB_RECURSE _tmp_list src/framework/cl/*.cpp src/operators/kernel/cl/*.cpp)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/framework/cl/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
+
+if (GPU_MALI)
     add_definitions(-DPADDLE_MOBILE_MALI_GPU)
     add_definitions(-DUSE_ACL=1)
     add_definitions(-DUSE_OPENCL)
@@ -53,57 +119,45 @@ else()
 endif()
 
 if(FPGA)
+    message("FPGA mode enabled")
     add_definitions(-DPADDLE_MOBILE_FPGA)
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.cc)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.cpp)
+    file(GLOB_RECURSE _tmp_list src/operators/kernel/fpga/*.cpp src/operators/kernel/fpga/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/operators/kernel/fpga/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+
+
+    file(GLOB_RECURSE _tmp_list src/fpga/*.cpp src/fpga/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/fpga/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
 endif()
 
-
-set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -s ${CMAKE_CXX_FLAGS}")
-if (DEBUGING)
-  message(STATUS "debug")
-  set(CMAKE_BUILD_TYPE Debug)
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -DNDEBUG")
-  add_definitions(-DPADDLE_MOBILE_DEBUG)
-  if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
-    add_definitions(-DARMV7)
+if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
-  endif ()
-else ()
-  set(CMAKE_BUILD_TYPE Release)
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
-  add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
-endif ()
-
-if (USE_EXCEPTION)
-    message(STATUS "use exception")
-    add_definitions(-DENABLE_EXCEPTION)
-    add_definitions(-fexceptions)
 else()
-    add_definitions(-fno-exceptions)
-endif ()
-
-if (LOG_PROFILE)
-    add_definitions(-DPADDLE_MOBILE_PROFILE)
-endif()
-
-if(USE_OPENMP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
-endif()
-
-
-
-
-if (NOT ANDROID_NDK_TOOLCHAIN_INCLUDED)
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.cpp)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/jni/paddle_mobile_jni.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/io/jni/paddle_mobile_jni.cpp)
     list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
-endif ()
+endif()
 
-include_directories(src/)
+if(IS_IOS)
+else()
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/PaddleMobileCPU.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/PaddleMobileCPU.mm)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/op_symbols.h)
+endif ()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -112,28 +166,46 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "defult" CACHE STRING "select net type")
-set_property(CACHE NET PROPERTY STRINGS "defult" "googlenet" "mobilenet" "yolo" "squeezenet")
+if(FPGA)
+    set(NET "FPGAnets" CACHE STRING "select net type")
+else()
+    set(NET "default" CACHE STRING "select net type")
+endif()
 
+set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets" "NLP")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
-if (IS_IOS)
-    add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-else()
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.mm)
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/op_symbols.h)
-endif ()
 
-if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
+# build library
+if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
     list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 elseif(IS_IOS)
-else ()
-    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-endif ()
+    if(USE_OPENMP)
+        add_library(paddle-mobile-stage0 STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+        add_custom_target(paddle-mobile ALL
+            COMMAND libtool -static -o ${CMAKE_BINARY_DIR}/libpaddle-mobile.a ${CMAKE_CURRENT_LIST_DIR}/tools/libomp.a $<TARGET_FILE:paddle-mobile-stage0>
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS paddle-mobile
+        )
+        add_dependencies(paddle-mobile paddle-mobile-stage0)
+    else()
+        add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    endif()
+else()
+  add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+endif()
 
+# unit test
 if(DEBUGING)
+    if(IS_IOS)
+    else()
+        add_subdirectory(test)
+    endif()
+elseif(FPGA)
     add_subdirectory(test)
 endif()
+
+
+
 

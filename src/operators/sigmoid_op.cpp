@@ -18,21 +18,18 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
 void SigmoidOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
-template class SigmoidOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
 #endif
 
 #endif

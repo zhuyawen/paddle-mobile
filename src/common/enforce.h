@@ -46,7 +46,8 @@ struct PaddleMobileException : public std::exception {
     std::string detail(buffer);                                            \
     throw paddle_mobile::PaddleMobileException("Custom Exception", buffer, \
                                                __FILE__, __LINE__);        \
-  }
+  }                                                                        \
+  exit(0);
 
 #define PADDLE_MOBILE_ENFORCE(stat, ...)                                      \
   {                                                                           \
@@ -61,7 +62,14 @@ struct PaddleMobileException : public std::exception {
   }
 #else
 #define PADDLE_MOBILE_THROW_EXCEPTION(...)
-#define PADDLE_MOBILE_ENFORCE(stat, ...)
+
+#define PADDLE_MOBILE_ENFORCE(stat, ...) \
+  {                                      \
+    if (stat) {                          \
+    } else {                             \
+    }                                    \
+  }
+
 #endif
 
 }  // namespace paddle_mobile

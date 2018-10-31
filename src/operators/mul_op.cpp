@@ -50,7 +50,7 @@ void MulOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_dims);
   this->param_.Out()->Resize(ddim);
 }
-template class MulOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -62,6 +62,6 @@ REGISTER_OPERATOR_CPU(mul, ops::MulOp);
 REGISTER_OPERATOR_MALI_GPU(mul, ops::MulOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(mul, ops::MulOp);
 #endif
-
 #endif

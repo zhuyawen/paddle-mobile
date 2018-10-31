@@ -14,7 +14,8 @@ limitations under the License. */
 
 #ifdef POOL_OP
 
-#include "pool_op.h"
+#include "operators/pool_op.h"
+#include <vector>
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 
@@ -54,7 +55,7 @@ void PoolOp<DeviceType, T>::InferShape() const {
   }
   this->param_.Output()->Resize(framework::make_ddim(output_shape));
 }
-template class PoolOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -66,6 +67,10 @@ REGISTER_OPERATOR_CPU(pool2d, ops::PoolOp);
 REGISTER_OPERATOR_MALI_GPU(pool2d, ops::PoolOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(pool2d, ops::PoolOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(pool2d, ops::PoolOp);
 #endif
 
 #endif

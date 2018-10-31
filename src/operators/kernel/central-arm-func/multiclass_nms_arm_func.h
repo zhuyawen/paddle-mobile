@@ -19,12 +19,12 @@ limitations under the License. */
 #include <map>
 #include <utility>
 #include <vector>
+#include "framework/tensor.h"
+#include "operators/math/poly_util.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-constexpr int kOutputDim = 6;
-constexpr int kBBoxSize = 4;
 
 template <class T>
 bool SortScorePairDescend(const std::pair<float, T>& pair1,
@@ -88,8 +88,24 @@ static inline T JaccardOverlap(const T* box1, const T* box2,
   }
 }
 
+template <class T>
+static inline T PolyIoU(const T* box1, const T* box2, const size_t box_size,
+                        const bool normalized) {
+  T bbox1_area = math::PolyArea<T>(box1, box_size, normalized);
+  T bbox2_area = math::PolyArea<T>(box2, box_size, normalized);
+  T inter_area = math::PolyOverlapArea<T>(box1, box2, box_size, normalized);
+  if (bbox1_area == 0 || bbox2_area == 0 || inter_area == 0) {
+    // If coordinate values are is invalid
+    // if area size <= 0,  return 0.
+    return static_cast<T>(0.);
+  } else {
+    return inter_area / (bbox1_area + bbox2_area - inter_area);
+  }
+}
+
 template <typename T>
-static inline void NMSFast(const Tensor& bbox, const Tensor& scores,
+static inline void NMSFast(const framework::Tensor& bbox,
+                           const framework::Tensor& scores,
                            const T score_threshold, const T nms_threshold,
                            const T eta, const int64_t top_k,
                            std::vector<int>* selected_indices) {
@@ -113,8 +129,14 @@ static inline void NMSFast(const Tensor& bbox, const Tensor& scores,
     for (size_t k = 0; k < selected_indices->size(); ++k) {
       if (keep) {
         const int kept_idx = (*selected_indices)[k];
-        T overlap = JaccardOverlap<T>(bbox_data + idx * box_size,
+        T overlap = T(0.);
+        if (box_size == 4) {
+          overlap = JaccardOverlap<T>(bbox_data + idx * box_size,
                                       bbox_data + kept_idx * box_size, true);
+        } else {
+          overlap = PolyIoU<T>(bbox_data + idx * box_size,
+                               bbox_data + kept_idx * box_size, box_size, true);
+        }
         keep = overlap <= adaptive_threshold;
       } else {
         break;
@@ -131,7 +153,8 @@ static inline void NMSFast(const Tensor& bbox, const Tensor& scores,
 }
 
 template <typename T>
-void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
+void MultiClassNMS(const framework::Tensor& scores,
+                   const framework::Tensor& bboxes,
                    std::map<int, std::vector<int>>* indices, int* num_nmsed_out,
                    const int& background_label, const int& nms_top_k,
                    const int& keep_top_k, const T& nms_threshold,
@@ -141,7 +164,7 @@ void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
   int num_det = 0;
   for (int64_t c = 0; c < class_num; ++c) {
     if (c == background_label) continue;
-    Tensor score = scores.Slice(c, c + 1);
+    framework::Tensor score = scores.Slice(c, c + 1);
     /// [c] is key
     NMSFast<float>(bboxes, score, score_threshold, nms_threshold, nms_eta,
                    nms_top_k, &((*indices)[c]));
@@ -181,10 +204,13 @@ void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
 }
 
 template <typename T>
-void MultiClassOutput(const Tensor& scores, const Tensor& bboxes,
+void MultiClassOutput(const framework::Tensor& scores,
+                      const framework::Tensor& bboxes,
                       const std::map<int, std::vector<int>>& selected_indices,
-                      Tensor* outs) {
+                      framework::Tensor* outs) {
   int predict_dim = scores.dims()[1];
+  int box_size = bboxes.dims()[1];
+  int out_dim = bboxes.dims()[1] + 2;
   auto* scores_data = scores.data<T>();
   auto* bboxes_data = bboxes.data<T>();
   auto* odata = outs->data<T>();
@@ -197,18 +223,18 @@ void MultiClassOutput(const Tensor& scores, const Tensor& bboxes,
     const std::vector<int>& indices = it.second;
     for (size_t j = 0; j < indices.size(); ++j) {
       int idx = indices[j];
-      const T* bdata = bboxes_data + idx * kBBoxSize;
-      odata[count * kOutputDim] = label;           // label
-      odata[count * kOutputDim + 1] = sdata[idx];  // score
+      const T* bdata = bboxes_data + idx * box_size;
+      odata[count * out_dim] = label;           // label
+      odata[count * out_dim + 1] = sdata[idx];  // score
       // xmin, ymin, xmax, ymax
-      std::memcpy(odata + count * kOutputDim + 2, bdata, 4 * sizeof(T));
+      std::memcpy(odata + count * out_dim + 2, bdata, box_size * sizeof(T));
       count++;
     }
   }
 }
 
 template <typename P>
-void MultiClassNMSCompute(const MultiClassNMSParam& param) {
+void MultiClassNMSCompute(const MultiClassNMSParam<CPU>& param) {
   const auto* input_bboxes = param.InputBBoxes();
   const auto& input_bboxes_dims = input_bboxes->dims();
 
@@ -231,10 +257,10 @@ void MultiClassNMSCompute(const MultiClassNMSParam& param) {
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<size_t> batch_starts = {0};
   for (int64_t i = 0; i < batch_size; ++i) {
-    Tensor ins_score = input_scores->Slice(i, i + 1);
+    framework::Tensor ins_score = input_scores->Slice(i, i + 1);
     ins_score.Resize({class_num, predict_dim});
 
-    Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+    framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
     ins_boxes.Resize({predict_dim, box_dim});
 
     std::map<int, std::vector<int>> indices;
@@ -251,18 +277,19 @@ void MultiClassNMSCompute(const MultiClassNMSParam& param) {
     float* od = outs->mutable_data<float>({1});
     od[0] = -1;
   } else {
-    outs->mutable_data<float>({num_kept, kOutputDim});
+    int64_t out_dim = box_dim + 2;
+    outs->mutable_data<float>({num_kept, out_dim});
     for (int64_t i = 0; i < batch_size; ++i) {
-      Tensor ins_score = input_scores->Slice(i, i + 1);
+      framework::Tensor ins_score = input_scores->Slice(i, i + 1);
       ins_score.Resize({class_num, predict_dim});
 
-      Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+      framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
       ins_boxes.Resize({predict_dim, box_dim});
 
       int64_t s = batch_starts[i];
       int64_t e = batch_starts[i + 1];
       if (e > s) {
-        Tensor out = outs->Slice(s, e);
+        framework::Tensor out = outs->Slice(s, e);
         MultiClassOutput<float>(ins_score, ins_boxes, all_indices[i], &out);
       }
     }

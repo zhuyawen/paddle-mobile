@@ -24,7 +24,7 @@ void LrnOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(x_dims);
 }
-template class LrnOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -34,8 +34,6 @@ REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(lrn, ops::LrnOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
 #endif
 
 #endif

@@ -48,8 +48,6 @@ void ConvOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class ConvOp<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -62,6 +60,10 @@ REGISTER_OPERATOR_MALI_GPU(conv2d, ops::ConvOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(conv2d, ops::ConvOp);
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(conv2d, ops::ConvOp);
 #endif
 
 #endif

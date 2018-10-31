@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef ELEMENTWISEADD_OP
 
-#include "elementwise_add_op.h"
+#include "operators/elementwise_add_op.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -24,7 +24,7 @@ void ElementwiseAddOp<Dtype, T>::InferShape() const {
   auto x_dim = this->param_.InputX()->dims();
   this->param_.Out()->Resize(x_dim);
 }
-template class ElementwiseAddOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -35,7 +35,9 @@ REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(elementwise_add, ops::ElementwiseAddOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(elementwise_add, ops::ElementwiseAddOp);
 #endif
 
 #endif

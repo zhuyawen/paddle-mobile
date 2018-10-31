@@ -14,11 +14,13 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "framework/operator.h"
-#include "node.h"
+#include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -42,8 +44,17 @@ class FusionOpRegister {
     matchers_[matcher->Type()] = shared_matcher;
   }
 
-  const std::map<std::string, std::shared_ptr<FusionOpMatcher>> Matchers() {
-    return matchers_;
+  const std::vector<std::shared_ptr<FusionOpMatcher>> Matchers() {
+    std::vector<std::shared_ptr<FusionOpMatcher>> matchers;
+    for (const auto& match : matchers_) {
+      matchers.push_back(match.second);
+    }
+    std::sort(matchers.begin(), matchers.end(),
+              [](std::shared_ptr<FusionOpMatcher> first,
+                 std::shared_ptr<FusionOpMatcher> second) {
+                return first->BeginNode().Depth() > second->BeginNode().Depth();
+              });
+    return matchers;
   }
 
  private:
@@ -56,7 +67,16 @@ class FusionOpRegistrar {
   explicit FusionOpRegistrar(FusionOpMatcher* matcher) {
     FusionOpRegister::Instance()->regist(matcher);
   }
+  void Touch() {}
 };
 
 }  // namespace framework
 }  // namespace paddle_mobile
+
+#define REGISTER_FUSION_MATCHER(op_type, matcher)          \
+  static paddle_mobile::framework::FusionOpRegistrar       \
+      __fusion_matcher_registrar_##op_type(new matcher()); \
+  int TouchFusionMatcherRegistrar_##op_type() {            \
+    __fusion_matcher_registrar_##op_type.Touch();          \
+    return 0;                                              \
+  }

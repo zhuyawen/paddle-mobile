@@ -38,7 +38,7 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
   }
 }
 template <typename P>
-void PoolCompute(const PoolParam &param) {
+void PoolCompute(const PoolParam<CPU> &param) {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();
   std::string pooling_type = param.PoolingType();
@@ -58,7 +58,8 @@ void PoolCompute(const PoolParam &param) {
       paddings[i] = 0;
       ksize[i] = static_cast<int>(in_x->dims()[i + 2]);
     }
-  } else if (ksize[0] == 3 && ksize[0] == ksize[1]) {
+  }
+  if (ksize[0] == 3 && ksize[0] == ksize[1]) {
     if (pooling_type == "max") {
       if (strides[0] == strides[1] && strides[0] == 1 &&
           paddings[0] == paddings[1] && paddings[1] == 1) {
@@ -75,16 +76,24 @@ void PoolCompute(const PoolParam &param) {
       }
     }
 
-  } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
-#ifndef IOS
+  } else if (ksize[0] == 2 && ksize[0] == ksize[1] && strides[0] == 2 &&
+             strides[0] == strides[1] && paddings[0] == paddings[1] &&
+             paddings[1] == 0) {
+#if __ARM_NEON
+#if __aarch64__
+    PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
+#else
+    /// todo: fix bug in Pool2x2
     if (pooling_type == "max") {
-      math::Pool2x2Max(strides, paddings, in_x, out);
+      math::Pool2x2Maxs2p0(strides, paddings, in_x, out);
     } else if (pooling_type == "avg") {
-      math::Pool2x2Avg(strides, paddings, in_x, out);
+      math::Pool2x2Avgs2p0(strides, paddings, in_x, out);
     }
+#endif
 #else
     PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
-#endif
+#endif  // __ARM_NEON
+
   } else {
     PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
   }

@@ -12,15 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "feed_op.h"
+#include "operators/feed_op.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template class FeedOp<CPU, float>;
+template <typename DeviceType, typename T>
+void FeedOp<DeviceType, T>::InferShape() const {
+  auto out_dims = this->param_.Out()->dims();
+  out_dims[0] = this->param_.BatchSize();
+  this->param_.Out()->Resize(out_dims);
 }
+
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
 #endif
@@ -28,5 +36,8 @@ REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
 REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-
+REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(feed, ops::FeedOp);
 #endif

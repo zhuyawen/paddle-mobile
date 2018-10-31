@@ -15,13 +15,14 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "operators/kernel/central-arm-func/conv_add_bn_relu_func.h"
+#include "operators/kernel/central-arm-func/conv_add_bn_relu_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
+bool ConvAddBNReluKernel<CPU, float>::Init(
+    FusionConvAddBNReluParam<CPU> *param) {
   const Tensor *mean = param->InputMean();
   const Tensor *variance = param->InputVariance();
   const Tensor *scale = param->InputScale();
@@ -54,7 +55,7 @@ bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
 
 template <>
 void ConvAddBNReluKernel<CPU, float>::Compute(
-    const FusionConvAddBNReluParam &param) const {
+    const FusionConvAddBNReluParam<CPU> &param) {
   ConvAddBNReluCompute<float>(param);
 }
 template class ConvAddBNReluKernel<CPU, float>;

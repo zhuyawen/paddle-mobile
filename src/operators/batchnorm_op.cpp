@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-#include "batchnorm_op.h"
+#include "operators/batchnorm_op.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 
@@ -26,7 +26,7 @@ void BatchNormOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   this->param_.OutputY()->Resize(x_dims);
 }
-template class BatchNormOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -35,10 +35,13 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(batch_norm);
 REGISTER_OPERATOR_MALI_GPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(batch_norm, ops::BatchNormOp);
 #endif
 
 #endif

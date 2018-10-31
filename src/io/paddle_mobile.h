@@ -17,11 +17,15 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 
 #include "common/types.h"
+#include "framework/executor.h"
+#include "framework/load_ops.h"
+#include "framework/loader.h"
 #include "framework/tensor.h"
-#include "io/executor.h"
-#include "io/loader.h"
 
 namespace paddle_mobile {
 
@@ -31,40 +35,42 @@ class PaddleMobile {
 
  public:
   PaddleMobile() {}
-  /*
-   * @b load separate format fluid model
-   * @b 加载分开形式的 fluid 模型
-   * */
   bool Load(const std::string &dirname, bool optimize = false,
-            int batch_size = 1);
+            bool quantification = false, int batch_size = 1,
+            bool loddable = false);
 
-  /*
-   * @b load combine format fluid mode
-   * @b 加载结合在一起格式的模型
-   * */
   bool Load(const std::string &model_path, const std::string &para_path,
-            bool optimize = false, int batch_size = 1);
+            bool optimize = false, bool quantification = false,
+            int batch_size = 1, bool loddable = false);
 
-  /*
-   * @b to predict
-   * */
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
 
-  /*
-   * @b to predict with vector and dim
-   *
-   * @b 使用 输入 和 输入的维度信息 进行预测
-   * */
+  std::shared_ptr<framework::Tensor> PredictLod(const framework::LoDTensor &t);
+
   std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
+  bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
+                          size_t combined_params_len,
+                          uint8_t *combined_params_buf);
+
+  void SetThreadNum(int num);
   void Clear();
 
   ~PaddleMobile();
 
+#ifdef PADDLE_MOBILE_FPGA
+  void InjectVariable(const framework::Tensor &t, std::string var_name);
+  void FeedData(const framework::Tensor &t);
+  std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
+  void Predict_From_To(int start = 0, int end = -1);
+  void Predict_From(int start);
+  void Predict_To(int end);
+#endif
+
  private:
-  std::shared_ptr<Loader<Dtype, P>> loader_;
-  std::shared_ptr<Executor<Dtype, P>> executor_;
+  std::shared_ptr<framework::Loader<Dtype, P>> loader_;
+  std::shared_ptr<framework::Executor<Dtype, P>> executor_;
 };
 
 }  // namespace paddle_mobile

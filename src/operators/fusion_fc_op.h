@@ -25,8 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
-using std::vector;
+
 class FusionFcMatcher : public framework::FusionOpMatcher {
  public:
   FusionFcMatcher() {
@@ -45,57 +44,22 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FusionFcOp
-    : public framework::OperatorWithKernel<
-          DeviceType, FusionFcParam, operators::FusionFcKernel<DeviceType, T>> {
+class FusionFcOp : public framework::OperatorWithKernel<
+                       DeviceType, FusionFcParam<DeviceType>,
+                       operators::FusionFcKernel<DeviceType, T>> {
  public:
-  FusionFcOp(const string &type, const VariableNameMap &inputs,
+  FusionFcOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionFcParam,
+      : framework::OperatorWithKernel<DeviceType, FusionFcParam<DeviceType>,
                                       operators::FusionFcKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionFcParam,
-      operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
-
- protected:
 };
-
-#ifdef PADDLE_MOBILE_CPU
-
-#ifndef CONV_CPU_REGISTER
-#define CONV_CPU_REGISTER
-extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
-#endif
-
-#endif
-
-#ifdef PADDLE_MOBILE_MALI_GPU
-
-#ifndef CONV_CPU_REGISTER
-#define CONV_CPU_REGISTER
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
-#endif
-
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_fc);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fc);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
-#endif
+#endif  // FUSION_FC_OP

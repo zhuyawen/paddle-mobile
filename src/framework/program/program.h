@@ -18,6 +18,8 @@ limitations under the License. */
 #include "framework/program/program_desc.h"
 #include "framework/scope.h"
 
+#include <string>
+
 namespace paddle_mobile {
 namespace framework {
 
@@ -30,8 +32,9 @@ class Program {
   std::string model_path;
   std::string para_path;
   bool combined = false;
-
- private:
+  bool quantification = false;
+  size_t combined_params_len;
+  uint8_t *combined_params_buf;
 };
 
 }  // namespace framework

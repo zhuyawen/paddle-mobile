@@ -25,14 +25,14 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-void ConvAddBasic(const FusionConvAddParam &param) {
+void ConvAddBasic(const FusionConvAddParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
   int axis = param.Axis();
   Tensor *output = param.Output();
-  math::expand_bias(bias, axis, output->dims());
-  output->ShareDataWith(bias);
+  float *biase_data = bias.data<float>();
+
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -108,13 +108,13 @@ void ConvAddBasic(const FusionConvAddParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(1));
+                          static_cast<float>(1), false, biase_data);
     }
   }
 }
 
 template <typename P>
-void ConvAddCompute(const FusionConvAddParam &param) {
+void ConvAddCompute(const FusionConvAddParam<CPU> &param) {
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
@@ -124,9 +124,18 @@ void ConvAddCompute(const FusionConvAddParam &param) {
   } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-             param.Filter()->dims()[2] == 3) {
-    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), param.Bias(), param.Output(), true);
+             param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
+    //        math::DepthwiseConv3x3(param.Input(), param.Strides(),
+    //        param.Paddings(),
+    //                               param.Filter(), param.Bias(),
+    //                               param.Output(), false);
+    if (param.Paddings()[0] == 0) {
+      math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
+                                 *param.Bias(), true);
+    } else {
+      math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
+                                   param.Output(), *param.Bias(), true);
+    }
   } else {
     ConvAddBasic(param);
   }

@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include <string>
 #include <typeinfo>
 #include <unordered_map>
@@ -50,7 +51,7 @@ class Attribute {
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__STRING: {
-        attr.Set<std::string>(std::string(attr_desc->s));
+        attr.SetString(std::string(attr_desc->s));
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BOOLEANS: {
@@ -107,21 +108,28 @@ class Attribute {
     return variant_.Get<T>();
   }
 
+  Attribute &SetString(std::string string) {
+    variant_.SetString(string);
+    return *this;
+  }
+
+  std::string GetString() const { return variant_.GetString(); }
+
   template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, Attribute attr) {
-    if (attr.variant_.TypeId() == typeid(int).hash_code()) {
+    if (attr.variant_.TypeId() == typeid(int).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<int>());
-    } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {
+    } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<float>());
     } else if (attr.variant_.TypeId() == typeid(string).hash_code()) {
-      return vistor(attr.variant_.Get<string>());
+      return vistor(attr.variant_.GetString());
     } else if (attr.variant_.TypeId() == typeid(vector<int>).hash_code()) {
       return vistor(attr.variant_.Get<vector<int>>());
     } else if (attr.variant_.TypeId() == typeid(vector<float>).hash_code()) {
       return vistor(attr.variant_.Get<vector<float>>());
     } else if (attr.variant_.TypeId() == typeid(vector<string>).hash_code()) {
       return vistor(attr.variant_.Get<vector<string>>());
-    } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {
+    } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<bool>());
     } else if (attr.variant_.TypeId() == typeid(vector<bool>).hash_code()) {
       return vistor(attr.variant_.Get<vector<bool>>());
@@ -129,7 +137,6 @@ class Attribute {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("type not support");
-      exit(0);
     }
   }
 
@@ -148,7 +155,7 @@ class AttrReader {
   template <typename T>
   inline T Get(const string &name) const {
     PADDLE_MOBILE_ENFORCE(attrs_.count(name) != 0,
-                          "%s should  be in AttributeMap", name);
+                          "%s should  be in AttributeMap", name.c_str());
     return ((Attribute)attrs_.at(name)).Get<T>();
   }
 

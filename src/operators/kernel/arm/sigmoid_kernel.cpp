@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "../sigmoid_kernel.h"
 #include "../central-arm-func/sigmoid_arm_func.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include "../../math/math_func_neon.h"
 #endif
 #include <cmath>
@@ -27,12 +27,12 @@ using framework::DDim;
 using framework::Tensor;
 
 template <>
-bool SigmoidKernel<CPU, float>::Init(SigmoidParam *param) {
+bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
   return true;
 }
 
 template <>
-void SigmoidKernel<CPU, float>::Compute(const SigmoidParam &param) const {
+void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
   SigmoidCompute<float>(param);
 }
 

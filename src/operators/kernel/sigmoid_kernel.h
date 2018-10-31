@@ -12,22 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SIGMOID_OP
-
 #pragma once
+
+#ifdef SIGMOID_OP
 
 #include "framework/operator.h"
 #include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
+
 using framework::OpKernelBase;
-void sigmoid(const Tensor* X, Tensor* Y);
+
 template <typename DeviceType, typename T>
-class SigmoidKernel : public OpKernelBase<DeviceType, SigmoidParam> {
+class SigmoidKernel
+    : public OpKernelBase<DeviceType, SigmoidParam<DeviceType>> {
  public:
-  void Compute(const SigmoidParam& param) const override;
-  bool Init(SigmoidParam* param);
+  void Compute(const SigmoidParam<DeviceType>& param);
+  bool Init(SigmoidParam<DeviceType>* param);
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

@@ -27,7 +27,7 @@ void ReshapeOp<Dtype, T>::InferShape() const {
   auto out_dims = ValidateShape(shape, input_x_dims);
   this->param_.Out()->Resize(out_dims);
 }
-template class ReshapeOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -38,7 +38,8 @@ REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
 #endif
 
 #endif

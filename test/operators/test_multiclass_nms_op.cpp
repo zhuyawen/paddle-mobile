@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include "../test_include.h"
 #include "operators/multiclass_nms_op.h"
 
@@ -31,14 +30,12 @@ class TestMultiClassNMSOp {
 
     const std::vector<std::shared_ptr<BlockDesc>> blocks =
         to_predict_program_->Blocks();
-    //  DLOG << " **block size " << blocks.size();
     for (auto block_desc : blocks) {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-      //    DLOG << " ops " << ops.size();
       for (auto op : ops) {
         if (op->Type() == "multiclass_nms" &&
             op->Input("BBoxes")[0] == "box_coder_0.tmp_0") {
-          DLOG << " mul attr size: " << op->GetAttrMap().size();
+          DLOG << " attr size: " << op->GetAttrMap().size();
           DLOG << " inputs size: " << op->GetInputs().size();
           DLOG << " outputs size: " << op->GetOutputs().size();
           DLOG << " BBoxes is : " << op->Input("BBoxes")[0];
@@ -55,14 +52,6 @@ class TestMultiClassNMSOp {
                << op->GetAttrMap().at("nms_top_k").Get<int>();
           DLOG << " score_threshold : "
                << op->GetAttrMap().at("score_threshold").Get<float>();
-          //                            DLOG << " variances : " <<
-          //                            op->GetAttrMap().at("variances").Get<std::vector<float>>();
-          //                            DLOG << " aspect_ratios : " <<
-          //                            op->GetAttrMap().at("aspect_ratios").Get<std::vector<float>>();
-          //                            DLOG << " min_sizes : " <<
-          //                            op->GetAttrMap().at("min_sizes").Get<std::vector<float>>();
-          //                            DLOG << " max_sizes : " <<
-          //                            op->GetAttrMap().at("max_sizes").Get<std::vector<float>>();
           std::shared_ptr<operators::MultiClassNMSOp<Dtype, float>> priorbox =
               std::make_shared<operators::MultiClassNMSOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
@@ -88,16 +77,12 @@ class TestMultiClassNMSOp {
     auto *output_tensor = output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>({1917, 6});
 
-    //  DLOG << typeid(output_tensor).name();
-    //  DLOG << "output_tensor dims: " << output_tensor->dims();
-
     std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
     out_tensor.reset(output_tensor);
 
     predict(t1, t2, 0);
 
     return out_tensor;
-    // return outvars_tensor;
   }
 
  private:
@@ -126,19 +111,25 @@ template class TestMultiClassNMSOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run MulticlassNMS Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
-
-  /// input x (1,3,300,300)
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
   paddle_mobile::framework::Tensor inputx1;
-  SetupTensor<float>(&inputx1, {10, 1917, 4}, static_cast<float>(0),
+  SetupTensor<float>(&inputx1, {1, 2, 4}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *inputx1_ptr = inputx1.data<float>();
+  const float x1[] = {0, 0, 100, 100, 50, 50, 150, 150};
+  for (int i = 0; i < 8; ++i) {
+    *(inputx1_ptr + i) = x1[i];
+  }
 
   paddle_mobile::framework::Tensor inputx2;
-  SetupTensor<float>(&inputx2, {10, 21, 1917}, static_cast<float>(0),
+  SetupTensor<float>(&inputx2, {1, 2, 2}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *inputx2_ptr = inputx2.data<float>();
+  const float x2[] = {0.4, 0.3, 0.6, 0.7};
+  for (int i = 0; i < 4; ++i) {
+    *(inputx2_ptr + i) = x2[i];
+  }
 
   paddle_mobile::framework::TestMultiClassNMSOp<paddle_mobile::CPU>
       testMultiClassNMSOp(program);
@@ -146,8 +137,26 @@ int main() {
   auto output = testMultiClassNMSOp.predict(inputx1, inputx2);
   auto *output_ptr = output->data<float>();
 
-  for (int i = 0; i < output->numel(); i++) {
+  for (int i = 0; i < output->numel(); ++i) {
     DLOG << output_ptr[i];
+  }
+
+  // test multi point
+  paddle_mobile::framework::Tensor inputx3;
+  SetupTensor<float>(&inputx3, {1, 2, 8}, static_cast<float>(0),
+                     static_cast<float>(1));
+  auto *inputx3_ptr = inputx3.data<float>();
+  const float x3[] = {0,  0,  100, 0,  100, 100, 0,  100,
+                      50, 50, 150, 50, 150, 150, 50, 150};
+  for (int i = 0; i < 16; ++i) {
+    *(inputx3_ptr + i) = x3[i];
+  }
+
+  auto output2 = testMultiClassNMSOp.predict(inputx3, inputx2);
+  auto *output_ptr2 = output2->data<float>();
+
+  for (int i = 0; i < output2->numel(); ++i) {
+    DLOG << output_ptr2[i];
   }
   return 0;
 }

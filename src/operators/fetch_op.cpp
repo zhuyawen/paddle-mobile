@@ -12,12 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fetch_op.h"
+#include "operators/fetch_op.h"
 namespace paddle_mobile {
 namespace operators {
 
-template class FetchOp<CPU, float>;
+template <typename DeviceType, typename T>
+void FetchOp<DeviceType, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dims);
 }
+
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
@@ -28,4 +33,8 @@ REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
 REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(fetch, ops::FetchOp);
 #endif

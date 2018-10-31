@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include "../test_include.h"
 #include "operators/box_coder_op.h"
 
@@ -46,7 +45,7 @@ class TestBoxCoderOp {
           DLOG << " Input TargetBox is : " << op->Input("TargetBox")[0];
           DLOG << " OutputBox is : " << op->Output("OutputBox")[0];
           DLOG << " code_type : "
-               << op->GetAttrMap().at("code_type").Get<std::string>();
+               << op->GetAttrMap().at("code_type").GetString();
           std::shared_ptr<operators::BoxCoderOp<Dtype, float>> boxcoder =
               std::make_shared<operators::BoxCoderOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
@@ -115,7 +114,7 @@ template class TestBoxCoderOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BoxCoderOp Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   paddle_mobile::framework::Tensor priorbox;

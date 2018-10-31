@@ -25,26 +25,23 @@ void MultiClassNMSOp<Dtype, T>::InferShape() const {
   if (input_scores_dims.size() != 3) {
     LOG(kLOG_ERROR) << "Input Scores size must be 3";
   }
-  if (input_bboxes_dims[2] != 4) {
-    LOG(kLOG_ERROR) << "Input BBoxes 2nd dimension must be 4";
+  if (input_bboxes_dims[2] % 4 != 0 || input_bboxes_dims[2] < 4) {
+    LOG(kLOG_ERROR) << "Input BBoxes 2nd dimension must be multiples of 4";
   }
   if (input_bboxes_dims[1] != input_scores_dims[2]) {
     LOG(kLOG_ERROR) << "Predict bboxes must be equal";
   }
   // pre size, will change in Compute.
-  this->param_.Out()->Resize(framework::make_ddim({input_bboxes_dims[1], 6}));
+  this->param_.Out()->Resize(
+      framework::make_ddim({input_bboxes_dims[1], input_bboxes_dims[2] + 2}));
 }
-template class MultiClassNMSOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(multiclass_nms, ops::MultiClassNMSOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
 #endif
 
 #endif

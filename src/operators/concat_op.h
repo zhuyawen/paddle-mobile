@@ -24,20 +24,16 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class ConcatOp
-    : public framework::OperatorWithKernel<
-          DeviceType, ConcatParam, operators::ConcatKernel<DeviceType, T>> {
+class ConcatOp : public framework::OperatorWithKernel<
+                     DeviceType, ConcatParam<DeviceType>,
+                     operators::ConcatKernel<DeviceType, T>> {
  public:
   ConcatOp(const string &type, const VariableNameMap &inputs,
            const VariableNameMap &outputs, const framework::AttributeMap &attrs,
            std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ConcatParam,
+      : framework::OperatorWithKernel<DeviceType, ConcatParam<DeviceType>,
                                       operators::ConcatKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ConcatParam,
-      operators::ConcatKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
@@ -45,14 +41,5 @@ class ConcatOp
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(concat);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(concat);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 #endif

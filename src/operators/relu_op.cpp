@@ -23,7 +23,7 @@ void ReluOp<Dtype, T>::InferShape() const {
   auto input_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(input_dims);
 }
-template class ReluOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -40,6 +40,9 @@ REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(relu, ops::ReluOp);
 #endif
 
 #endif

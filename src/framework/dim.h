@@ -14,6 +14,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
+#include <string>
 #include "common/enforce.h"
 namespace paddle_mobile {
 namespace framework {
@@ -40,7 +42,7 @@ struct Dim {
       : head(idx % size.head), tail(idx / size.head, size.tail) {}
 
   /** Construct a Dim with each dimension set to the given index */
-  Dim(int64_t idx) : head(idx), tail(idx) {}
+  explicit Dim(int64_t idx) : head(idx), tail(idx) {}
 
   bool operator==(const Dim<i> &o) const {
     return (head == o.head) && (tail == o.tail);
@@ -63,7 +65,7 @@ template <>
 struct Dim<0> {
   static constexpr int dimensions = 0;
 
-  Dim(int64_t _head) {}
+  explicit Dim(int64_t _head) {}
 
   Dim() {}
 
@@ -129,7 +131,6 @@ int64_t &indexer(Dim<D> &dim, int idx) {
 template <>
 int64_t &indexer<0>(Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-  exit(0);
 }
 
 template <int D>
@@ -146,7 +147,6 @@ int64_t indexer(const Dim<D> &dim, int idx) {
 template <>
 int64_t indexer<0>(const Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-  exit(0);
 }
 
 }  // namespace

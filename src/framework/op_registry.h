@@ -14,8 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <tuple>
+
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/op_info.h"
@@ -45,7 +47,6 @@ struct OperatorRegistrar : public Registrar {
           << "OperatorRegistrar should be invoked at least by OpClass";
       return;
     }
-    printf(" regis ting %s \n", op_type.c_str());
     OpInfo<Dtype> info;
     OperatorRegistrarRecursive<Dtype, 0, false, ARGS...>(op_type, &info);
     OpInfoMap<Dtype>::Instance()->Insert(op_type, info);
@@ -98,6 +99,7 @@ class OpRegistry {
 };
 
 #define REGISTER_OPERATOR(op_type, op_class, device_name, device_type)     \
+  template class op_class<device_type, float>;                             \
   template <typename Dtype, typename T>                                    \
   class _OpClass_##op_type##_##device_name : public op_class<Dtype, T> {   \
    public:                                                                 \
@@ -108,7 +110,6 @@ class OpRegistry {
       __op_registrar_##op_type##_##device_name(#op_type);                  \
   int TouchOpRegistrar_##op_type##_##device_name() {                       \
     __op_registrar_##op_type##_##device_name.Touch();                      \
-    printf(" registering !! \n");                                          \
     return 0;                                                              \
   }
 
@@ -121,16 +122,8 @@ class OpRegistry {
 #define REGISTER_OPERATOR_FPGA(op_type, op_class) \
   REGISTER_OPERATOR(op_type, op_class, fpga, paddle_mobile::FPGA);
 
-#define USE_OP(op_type, device_name)                                           \
-  extern int TouchOpRegistrar_##op_type##_##device_name();                     \
-  static int use_op_itself_##op_type##_##device_name __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_##device_name()
-
-#define USE_OP_CPU(op_type) USE_OP(op_type, cpu);
-
-#define USE_OP_MALI_GPU(op_type) USE_OP(op_type, mali_gpu);
-
-#define USE_OP_FPGA(op_type) USE_OP(op_type, fpga);
+#define REGISTER_OPERATOR_CL(op_type, op_class) \
+  REGISTER_OPERATOR(op_type, op_class, cl, paddle_mobile::GPU_CL);
 
 }  // namespace framework
 }  // namespace paddle_mobile

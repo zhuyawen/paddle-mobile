@@ -18,8 +18,8 @@ limitations under the License. */
 #include <vector>
 
 #include "common/log.h"
+#include "framework/executor.h"
 #include "framework/op_registry.h"
-#include "io/executor.h"
 #include "operators/conv_op.h"
 #include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
@@ -29,9 +29,9 @@ limitations under the License. */
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 
-using paddle_mobile::Executor;
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
+using paddle_mobile::framework::Executor;
 using paddle_mobile::framework::LoDTensor;
 using paddle_mobile::framework::OpDesc;
 using paddle_mobile::framework::Program;
@@ -57,11 +57,13 @@ class Executor4Test : public Executor<DeviceType> {
       LOG(paddle_mobile::LogLevel::kLOG_ERROR)
           << "to_predict_program_ == nullptr";
     }
+
     const std::vector<std::shared_ptr<BlockDesc>> blocks =
         this->to_predict_program_->Blocks();
     for (std::shared_ptr<BlockDesc> block_desc : blocks) {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-      for (std::shared_ptr<OpDesc> op : ops) {
+      for (int i = 0; i < ops.size(); ++i) {
+        auto op = ops[i];
         if (op->Type() == op_type) {
           DLOG << "匹配到: " << op->Type();
 
@@ -77,6 +79,13 @@ class Executor4Test : public Executor<DeviceType> {
       }
     }
     this->InitMemory();
+
+    std::shared_ptr<paddle_mobile::framework::BlockDesc> to_predict_block =
+        this->to_predict_program_->Block(0);
+    auto &ops = this->ops_of_block_[*to_predict_block.get()];
+    for (const auto &op : ops) {
+      op->Init();
+    }
   }
 
   template <typename T = LoDTensor>
@@ -130,9 +139,6 @@ class Executor4Test : public Executor<DeviceType> {
     auto *output_tensor = con_output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>(dDim);
 
-    std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
-    out_tensor.reset(output_tensor);
-
     std::shared_ptr<paddle_mobile::framework::BlockDesc> to_predict_block =
         this->to_predict_program_->Block(0);
     for (int j = 0; j < this->ops_of_block_[*to_predict_block.get()].size();
@@ -141,6 +147,7 @@ class Executor4Test : public Executor<DeviceType> {
       op->Run();
     }
 
-    return out_tensor;
+    return std::make_shared<paddle_mobile::framework::Tensor>(
+        paddle_mobile::framework::Tensor(*output_tensor));
   }
 };

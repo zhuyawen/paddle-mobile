@@ -12,8 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
+#pragma once
 
+#ifdef LRN_OP
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -47,6 +51,7 @@ struct LRNFunctor {
     std::fill(sqr_buffer_ptr, sqr_buffer_ptr + sqr_buffer.numel(), 0.0);
 
     for (int a = 0; a < N; a++) {
+#pragma parallel for
       for (int b = 0; b < C; b++) {
         for (int index = start; index < end; index++) {
           int channel = b + index;
@@ -167,10 +172,11 @@ struct LRNFunctor {
 };
 
 template <typename DeviceType, typename T>
-class LrnKernel : public framework::OpKernelBase<DeviceType, LrnParam> {
+class LrnKernel
+    : public framework::OpKernelBase<DeviceType, LrnParam<DeviceType>> {
  public:
-  void Compute(const LrnParam &param) const;
-  bool Init(LrnParam *param);
+  void Compute(const LrnParam<DeviceType> &param);
+  bool Init(LrnParam<DeviceType> *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

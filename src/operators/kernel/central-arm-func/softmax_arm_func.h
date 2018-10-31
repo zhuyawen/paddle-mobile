@@ -15,14 +15,16 @@ limitations under the License. */
 #ifdef SOFTMAX_OP
 #pragma once
 #include "../../math/softmax.h"
+#include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
 template <typename P>
-void SoftmaxCompute(const SoftmaxParam &param) {
+void SoftmaxCompute(const SoftmaxParam<CPU> &param) {
   const Tensor *in_x = param.InputX();
   Tensor *out = param.Out();
   auto x_dims = in_x->dims();
   out->Resize(x_dims);
+  out->mutable_data<float>();
   math::SoftmaxFuntor<CPU, float>()(in_x, out);
 }
 }  // namespace operators

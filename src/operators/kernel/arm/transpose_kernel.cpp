@@ -20,12 +20,12 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool TransposeKernel<CPU, float>::Init(TransposeParam *param) {
+bool TransposeKernel<CPU, float>::Init(TransposeParam<CPU> *param) {
   return true;
 }
 
 template <>
-void TransposeKernel<CPU, float>::Compute(const TransposeParam &param) const {
+void TransposeKernel<CPU, float>::Compute(const TransposeParam<CPU> &param) {
   TransposeCompute<float>(param);
 }
 
