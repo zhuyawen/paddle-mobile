@@ -190,6 +190,10 @@ else ()
     ADD_EXECUTABLE(test-conv-add-bn-relu-op operators/test_fusion_conv_add_bn_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-conv-add-bn-relu-op paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test_super_resolution_combine net/test_super_resolution_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test_super_resolution_combine paddle-mobile)
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
 

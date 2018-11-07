@@ -16,12 +16,39 @@
 //
 #include "io/decrypter.h"
 #include <common/log.h>
+
 #include <model-decrypt/include/model_crypt.h>
 #include <model-decrypt/include/model_decrypt.h>
 #include <string>
 
 namespace paddle_mobile {
+int save_buf_to_file(const unsigned char *buf, unsigned int buf_size,
+                     const char *file_path) {
+  assert(buf != NULL && file_path != NULL);
+  FILE *out = NULL;
+  unsigned int size_written = 0;
+  int ret = 0;
 
+  if (NULL == buf || 0 == buf_size || NULL == file_path) {
+    printf("save_buf_to_file: invalid parameters.\n");
+    return -1;
+  }
+
+  out = fopen(file_path, "wb");
+  if (NULL == out) {
+    printf("failed to open %s to write.\n", file_path);
+    return -1;
+  }
+  size_written = fwrite(buf, 1, buf_size, out);
+  if (size_written != buf_size) {
+    printf("error: size_written:%u != buf_size:%u\n", size_written, buf_size);
+    ret = -1;
+  }
+
+  fclose(out);
+  out = NULL;
+  return ret;
+}
 size_t decrypter::ReadBufferCrypt(const char *file_path,
                                   uint8_t **decrypt_output, const char *key) {
   std::string str = file_path;
@@ -65,7 +92,9 @@ size_t decrypter::ReadBufferCrypt(const char *file_path,
     return static_cast<size_t>(0);
   }
   DLOG << "decrypt_output_size: " << decrypt_output_size;
+  DLOG << "向文件保存: " << decrypt_output_size;
 
+  save_buf_to_file(*decrypt_output,decrypt_output_size,std::string(file_path).append("dec").c_str());
   // release output
   //    free(decrypt_output);
   //    decrypt_output = NULL;
